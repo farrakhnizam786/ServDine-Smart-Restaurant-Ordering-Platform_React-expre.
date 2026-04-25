@@ -1,0 +1,4 @@
+backend: PS D:\farrakh important\fullstack project\myRestro\restaurant-backend> npm run dev
+frontend: cd frontend
+          npm run dev
+

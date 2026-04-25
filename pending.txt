@@ -1,0 +1,3 @@
+admin have gst and tax  box to add in restaurant
+superadmin have qr and payment bank or upi chnage otpion for order and payemtn
+

@@ -1,0 +1,99 @@
+/api/auth/register        ✅
+/api/auth/login           ✅ POST,DELETE 
+/api/superadmin/create-admin ✅  for client side using POST ,using Get All Admins ,Get All Users ,DELET ADMIN
+http://localhost:5000/api/superadmin/admin/id--(69ea644c3bcbf652340f8097) ✅ for client side using DELETE method  
+http://localhost:5000/api/menu POST ✅ 
+http://localhost:5000/api/menu/:restaurantId GET  ✅ 
+http://localhost:5000/api/menu/id DELETE  ✅ 
+
+
+testing order: 
+POST http://localhost:5000/api/auth/login
+body : {
+  "email": "adminA@gmail.com",
+  "password": "123456"
+}
+token : eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY5ZWE2YzViZjRjZmQ4OTFkZGNjNmVmNyIsImlhdCI6MTc3Njk3MTc4MCwiZXhwIjoxNzc3NTc2NTgwfQ.sNo5otIEE6K2s5HBEWmfdmRTyPNmB5EAF1VL47hTm1M
+
+
+customer : token 
+eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY5ZWE3MGRiZDBlMzY5YjY4NDFkMTg1YSIsImlhdCI6MTc3Njk3MTk5NSwiZXhwIjoxNzc3NTc2Nzk1fQ.kCdYXgTvxAPIjSG3zfBajC5POnpmdocQFwREyzpsJ-A
+
+LOGIN URL (FOR ALL USERS)
+POST http://localhost:5000/api/auth/login
+🚀 1. SUPERADMIN LOGIN
+{
+  "email": "superadmin@system.com",
+  "password": "123456"
+}
+
+👉 Use this token for:
+
+Create admin
+Delete admin
+View all users
+🚀 2. ADMIN LOGIN
+{
+  "email": "adminA@gmail.com",
+  "password": "123456"
+}
+
+👉 Use this token for:
+
+Add menu
+Create staff
+View orders
+Update order status
+🚀 3. STAFF LOGIN
+
+👉 First you must create staff (by admin), then:
+
+{
+  "email": "staff1@gmail.com",
+  "password": "123456"
+}
+
+👉 Use this token for:
+
+View orders
+Update order status
+🚀 4. CUSTOMER LOGIN
+{
+  "email": "customer@gmail.com",
+  "password": "123456"
+}
+
+👉 Use this token for:
+
+Place order
+View menu
+🧠 HOW TO USE TOKEN
+
+After login you get:
+
+{
+  "token": "eyJhbGciOiJIUzI1NiIs..."
+}
+👉 Add in headers:
+Authorization: Bearer YOUR_TOKEN
+⚠️ IMPORTANT
+Role	Can do
+superadmin	manage admins
+admin	manage menu + staff
+staff	manage orders
+customer	place orders
+🧪 QUICK TEST FLOW
+Login → get token
+Copy token
+Use in headers
+Call API
+🚀 PRO TIP
+
+Keep tokens like:
+
+SUPERADMIN_TOKEN
+ADMIN_TOKEN
+STAFF_TOKEN
+CUSTOMER_TOKEN
+
+👉 Makes testing very easy
