@@ -6,7 +6,7 @@ function ContactUs() {
         <div className="min-h-[calc(100vh-4rem)] p-6 max-w-7xl mx-auto pt-12">
             <div className="text-center mb-16">
                 <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4 tracking-tight">Get in Touch</h1>
-                <p className="text-gray-500 text-lg max-w-2xl mx-auto">Have questions about DineFlow or want to partner with us? We'd love to hear from you.</p>
+                <p className="text-gray-500 text-lg max-w-2xl mx-auto">Have questions about ServDine or want to partner with us? We'd love to hear from you.</p>
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-start">

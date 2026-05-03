@@ -196,7 +196,8 @@ function KitchenScreen() {
     const filteredOrders = orders.filter(o => {
         if (filter === "active") return ["pending", "preparing", "ready"].includes(o.status);
         if (filter === "completed") return o.status === "delivered";
-        return true;
+        if (filter === "cancelled") return o.status === "cancelled";
+        return true; // "all" — show everything
     });
 
     const getStatusConfig = (status) => {
@@ -205,6 +206,7 @@ function KitchenScreen() {
             case "preparing": return { color: "text-blue-500", bg: "bg-blue-500/10", icon: ChefHat, label: "Preparing" };
             case "ready": return { color: "text-brand-primary", bg: "bg-brand-primary/10", icon: Package, label: "Ready" };
             case "delivered": return { color: "text-green-500", bg: "bg-green-500/10", icon: CheckCircle2, label: "Completed" };
+            case "cancelled": return { color: "text-red-500", bg: "bg-red-500/10", icon: X, label: "Cancelled" };
             default: return { color: "text-gray-500", bg: "bg-gray-500/10", icon: Clock, label: status };
         }
     };
@@ -265,16 +267,19 @@ function KitchenScreen() {
                     </button>
 
                     <div className="flex bg-gray-200 p-1 rounded-xl border border-gray-100">
-                        {["all", "active", "completed"].map(f => (
+                        {["all", "active", "completed", "cancelled"].map(f => (
                             <button
                                 key={f}
                                 onClick={() => setFilter(f)}
-                                className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${filter === f
+                                className={`px-3 py-2 rounded-lg text-sm font-medium transition-all ${
+                                    filter === f
                                         ? "bg-white text-gray-900 shadow"
                                         : "text-gray-500 hover:text-gray-900"
-                                    }`}
+                                } ${f === "cancelled" && filter !== "cancelled" ? "text-red-400" : ""}`}
                             >
                                 {f.charAt(0).toUpperCase() + f.slice(1)}
+                                {f === "active" && <span className="ml-1 text-xs bg-yellow-400/20 text-yellow-600 px-1.5 rounded-full">{orders.filter(o => ["pending","preparing","ready"].includes(o.status)).length}</span>}
+                                {f === "cancelled" && <span className="ml-1 text-xs bg-red-400/20 text-red-500 px-1.5 rounded-full">{orders.filter(o => o.status === "cancelled").length}</span>}
                             </button>
                         ))}
                     </div>

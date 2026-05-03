@@ -8,16 +8,20 @@ const {
     getMenu,
     deleteMenuItem,
     updateMenuItem,
+    getRecommendations,
 } = require("../controllers/menu.controller");
 
 
 // ✅ Admin + Superadmin can add
 router.post("/", protect, authorize("admin", "superadmin"), addMenuItem);
 
-// ✅ Public
+// ✅ Public — recommendations
+router.get("/:restaurantId/recommendations", getRecommendations);
+
+// ✅ Public — menu list
 router.get("/:restaurantId", getMenu);
 
-// ✅ Update
+// ✅ Update (emits socket for real-time price sync)
 router.put("/:id", protect, authorize("admin", "superadmin"), updateMenuItem);
 
 // ✅ Delete

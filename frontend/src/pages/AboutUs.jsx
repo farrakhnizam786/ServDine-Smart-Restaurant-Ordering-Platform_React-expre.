@@ -11,7 +11,7 @@ function AboutUs() {
             >
                 <h1 className="text-4xl md:text-5xl font-black text-gray-900 mb-6">Redefining the Dining Experience</h1>
                 <p className="text-lg text-gray-500 max-w-2xl mx-auto leading-relaxed">
-                    DineFlow is built on the belief that great food deserves a seamless, modern experience. We connect food lovers with their favorite restaurants, making ordering, tracking, and dining better than ever before.
+                    ServDine is built on the belief that great food deserves a seamless, modern experience. We connect food lovers with their favorite restaurants, making ordering, tracking, and dining better than ever before.
                 </p>
             </motion.div>
 
@@ -54,10 +54,10 @@ function AboutUs() {
                 <h2 className="text-2xl font-bold text-gray-900 mb-4">Our Story</h2>
                 <div className="space-y-4 text-gray-700 leading-relaxed">
                     <p>
-                        Started in 2026, DineFlow emerged from a simple frustration: dining out and ordering in shouldn't be complicated. We set out to create a platform that bridges the gap between hungry customers and hard-working restaurant staff.
+                        Started in 2026, ServDine emerged from a simple frustration: dining out and ordering in shouldn't be complicated. We set out to create a platform that bridges the gap between hungry customers and hard-working restaurant staff.
                     </p>
                     <p>
-                        Today, DineFlow serves thousands of customers daily, providing real-time tracking, seamless table communication, and an interface that feels like magic. We're not just an app; we're your digital dining companion.
+                        Today, ServDine serves thousands of customers daily, providing real-time tracking, seamless table communication, and an interface that feels like magic. We're not just an app; we're your digital dining companion.
                     </p>
                 </div>
             </div>

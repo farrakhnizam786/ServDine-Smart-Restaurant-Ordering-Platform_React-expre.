@@ -2,3 +2,17 @@ backend: PS D:\farrakh important\fullstack project\myRestro\restaurant-backend> 
 frontend: cd frontend
           npm run dev
 
+update on git : git add .
+git commit -m "updated project"
+git push origin main
+
+⚠️ IF YOU GET ERROR AGAIN (LIKE BEFORE)
+
+Run this first:
+
+git pull origin main --rebase
+
+Then:
+
+git push origin main
+

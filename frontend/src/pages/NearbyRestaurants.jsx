@@ -416,14 +416,14 @@ function NearbyRestaurants() {
                     <MessageCircleHeart className="w-8 h-8 text-brand-primary" />
                     <div>
                         <h2 className="text-3xl font-bold text-gray-900 tracking-tight">Community Reviews</h2>
-                        <p className="text-gray-500 mt-1">Real feedback from DineFlow customers</p>
+                        <p className="text-gray-500 mt-1">Real feedback from ServDine customers</p>
                     </div>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     {[
                         { name: "Rahul S.", date: "Just now", restro: "Khana Khazana", rating: 5, text: "Amazing food and super fast delivery. The 'Call Staff' feature is a game changer!" },
                         { name: "Priya M.", date: "2 mins ago", restro: "Spice Route", rating: 4, text: "Loved the ambience and the seamless ordering experience. Highly recommend the Biryani." },
-                        { name: "Amit K.", date: "15 mins ago", restro: "Burger Hub", rating: 5, text: "Best burgers in town. Tracked my order easily using DineFlow." },
+                        { name: "Amit K.", date: "15 mins ago", restro: "Burger Hub", rating: 5, text: "Best burgers in town. Tracked my order easily using ServDine." },
                     ].map((review, idx) => (
                         <motion.div
                             initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: idx * 0.1 }}

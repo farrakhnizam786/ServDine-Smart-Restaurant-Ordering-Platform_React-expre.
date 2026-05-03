@@ -1,4 +1,5 @@
 const Menu = require("../models/menu.model");
+const Order = require("../models/order.model");
 const mongoose = require("mongoose");
 
 
@@ -95,7 +96,7 @@ exports.deleteMenuItem = async (req, res) => {
 
 
 
-// 🔥 Update menu item (NEW - IMPORTANT)
+// 🔥 Update menu item — emits socket event so all customers see the new price
 exports.updateMenuItem = async (req, res) => {
     try {
         const { id } = req.params;
@@ -111,7 +112,6 @@ exports.updateMenuItem = async (req, res) => {
         }
 
         // 🔒 Ownership check
-        // 🔒 Safe ownership check
         if (
             !item.restaurantId ||
             item.restaurantId.toString() !== req.user.restaurantId?.toString()
@@ -119,17 +119,86 @@ exports.updateMenuItem = async (req, res) => {
             return res.status(403).json({ message: "Not authorized" });
         }
 
-
         const updatedItem = await Menu.findByIdAndUpdate(
             id,
             req.body,
             { new: true }
         ).select("-__v");
 
+        // 🔥 Real-time price broadcast — all customers on this restaurant's menu see the update
+        const io = req.app.get("io");
+        if (io && req.user.restaurantId) {
+            io.to(req.user.restaurantId.toString()).emit("menuItemUpdated", {
+                item: updatedItem
+            });
+        }
+
         res.json({
             message: "Item updated",
             item: updatedItem,
         });
+
+    } catch (err) {
+        res.status(500).json({ message: err.message });
+    }
+};
+
+// 🔥 Smart Recommendations — popular items + category affinity
+exports.getRecommendations = async (req, res) => {
+    try {
+        const { restaurantId } = req.params;
+
+        if (!mongoose.Types.ObjectId.isValid(restaurantId)) {
+            return res.status(400).json({ message: "Invalid restaurant ID" });
+        }
+
+        // Get all menu items
+        const allItems = await Menu.find({ restaurantId }).select("-__v");
+
+        // Get last 30 days of delivered orders to calculate popularity
+        const since = new Date();
+        since.setDate(since.getDate() - 30);
+
+        const recentOrders = await Order.find({
+            restaurantId,
+            status: "delivered",
+            createdAt: { $gte: since }
+        });
+
+        // Count item frequency
+        const itemFrequency = {};
+        recentOrders.forEach(order => {
+            (order.items || []).forEach(item => {
+                const key = item.menuItemId?.toString() || item.name;
+                itemFrequency[key] = (itemFrequency[key] || 0) + (item.quantity || 1);
+            });
+        });
+
+        // Enrich items with order count
+        const enriched = allItems.map(item => ({
+            ...item.toObject(),
+            orderCount: itemFrequency[item._id.toString()] || 0
+        }));
+
+        // Sort by order count desc — top 8 = "Most Popular"
+        const popular = [...enriched]
+            .sort((a, b) => b.orderCount - a.orderCount)
+            .slice(0, 8);
+
+        // Today's specials = recently added items (last 7 days) with at least some orders OR new items
+        const sevenDaysAgo = new Date();
+        sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+        const todaySpecials = enriched
+            .filter(i => new Date(i.createdAt) >= sevenDaysAgo)
+            .slice(0, 6);
+
+        // Highly recommended = intersection of popular + good description
+        const highlyRecommended = enriched
+            .filter(i => i.orderCount >= 1 || (i.description && i.description.length > 10))
+            .sort((a, b) => b.orderCount - a.orderCount)
+            .slice(0, 6);
+
+        res.json({ popular, todaySpecials, highlyRecommended });
 
     } catch (err) {
         res.status(500).json({ message: err.message });

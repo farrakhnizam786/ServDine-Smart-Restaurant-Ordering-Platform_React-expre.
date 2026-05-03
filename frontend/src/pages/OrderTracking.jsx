@@ -5,7 +5,8 @@ import { io } from "socket.io-client";
 import { motion, AnimatePresence } from "framer-motion";
 import {
     CheckCircle2, ChefHat, Clock, Package, ArrowLeft, Store,
-    MessageCircle, Send, BellRing, X, Star, ThumbsUp, XCircle
+    MessageCircle, Send, BellRing, X, Star, ThumbsUp, XCircle,
+    Bike, MapPin, Navigation
 } from "lucide-react";
 import { toast } from "react-toastify";
 
@@ -30,6 +31,9 @@ function OrderTracking() {
     const [reviewComment, setReviewComment] = useState("");
     const [submittingReview, setSubmittingReview] = useState(false);
     const [reviewed, setReviewed] = useState(false);
+
+    // Live Delivery Status
+    const [deliveryStatus, setDeliveryStatus] = useState(null); // null | accepted | picked_up | on_the_way | nearby | delivered
 
     useEffect(() => {
         chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -103,6 +107,15 @@ function OrderTracking() {
 
         socket.on("receiveMessage", (msg) => {
             setMessages(prev => [...prev, msg]);
+        });
+
+        // 🔥 Live delivery boy status updates
+        socket.on("deliveryStatusUpdated", ({ orderId: oid, status, staffName }) => {
+            if (oid === orderId) {
+                setDeliveryStatus(status);
+                const labels = { accepted: "Delivery accepted", picked_up: "Order picked up", on_the_way: "On the way!", nearby: "Almost there!", delivered: "Delivered!" };
+                toast.info(`🏍️ ${staffName || "Delivery"}: ${labels[status] || status}`);
+            }
         });
 
         return () => socket.disconnect();
@@ -245,6 +258,45 @@ function OrderTracking() {
                             <p className="text-gray-500 text-sm">This order has been cancelled.</p>
                         </div>
                     </div>
+                )}
+
+                {/* Live Delivery Status — only for Home Delivery orders */}
+                {order.tableNumber === "Home Delivery" && !isCancelled && (
+                    <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
+                        className="bg-gradient-to-br from-blue-500/10 to-purple-500/10 border border-blue-500/20 rounded-xl p-5">
+                        <h3 className="font-bold text-gray-900 mb-4 flex items-center gap-2">
+                            <Bike className="w-5 h-5 text-blue-400 animate-bounce" />
+                            Live Delivery Tracking
+                        </h3>
+                        <div className="space-y-3">
+                            {[
+                                { key: "accepted", label: "Order Accepted", emoji: "✅" },
+                                { key: "picked_up", label: "Order Picked Up", emoji: "📦" },
+                                { key: "on_the_way", label: "On the Way", emoji: "🏍️" },
+                                { key: "nearby", label: "Almost There!", emoji: "📍" },
+                                { key: "delivered", label: "Delivered!", emoji: "🎉" },
+                            ].map((step, i) => {
+                                const statusOrder = ["accepted", "picked_up", "on_the_way", "nearby", "delivered"];
+                                const currentIdx = deliveryStatus ? statusOrder.indexOf(deliveryStatus) : -1;
+                                const stepIdx = statusOrder.indexOf(step.key);
+                                const isDone = currentIdx >= stepIdx;
+                                const isCurr = currentIdx === stepIdx;
+                                return (
+                                    <div key={step.key} className={`flex items-center gap-3 p-2.5 rounded-lg transition-all ${
+                                        isDone ? "bg-blue-500/10" : "opacity-40"
+                                    }`}>
+                                        <span className={`text-xl ${isCurr ? "animate-bounce" : ""}`}>{step.emoji}</span>
+                                        <span className={`text-sm font-medium ${isDone ? "text-gray-900" : "text-gray-500"}`}>{step.label}</span>
+                                        {isCurr && <span className="ml-auto text-xs bg-blue-500 text-white px-2 py-0.5 rounded-full font-bold animate-pulse">LIVE</span>}
+                                        {isDone && !isCurr && <span className="ml-auto text-green-400 text-xs">✓</span>}
+                                    </div>
+                                );
+                            })}
+                        </div>
+                        {!deliveryStatus && (
+                            <p className="text-xs text-gray-500 mt-3 text-center">Waiting for delivery staff to accept your order...</p>
+                        )}
+                    </motion.div>
                 )}
 
                 {/* Progress Tracker */}

@@ -160,3 +160,86 @@ exports.getDashboardStats = async (req, res) => {
         res.status(500).json({ message: err.message });
     }
 };
+
+// 🔥 Revenue Analytics with filters
+exports.getRevenueAnalytics = async (req, res) => {
+    try {
+        const restaurantId = req.user.restaurantId;
+        const { filter, from, to } = req.query;
+
+        let startDate;
+        const endDate = new Date();
+        endDate.setHours(23, 59, 59, 999);
+
+        if (filter === "24h") {
+            startDate = new Date(Date.now() - 24 * 60 * 60 * 1000);
+        } else if (filter === "7d") {
+            startDate = new Date();
+            startDate.setDate(startDate.getDate() - 7);
+            startDate.setHours(0, 0, 0, 0);
+        } else if (filter === "30d") {
+            startDate = new Date();
+            startDate.setDate(startDate.getDate() - 30);
+            startDate.setHours(0, 0, 0, 0);
+        } else if (filter === "1yr") {
+            startDate = new Date();
+            startDate.setFullYear(startDate.getFullYear() - 1);
+            startDate.setHours(0, 0, 0, 0);
+        } else if (filter === "custom" && from && to) {
+            startDate = new Date(from);
+            startDate.setHours(0, 0, 0, 0);
+            endDate.setTime(new Date(to).setHours(23, 59, 59, 999));
+        } else {
+            // Default: last 7 days
+            startDate = new Date();
+            startDate.setDate(startDate.getDate() - 7);
+            startDate.setHours(0, 0, 0, 0);
+        }
+
+        const orders = await Order.find({
+            restaurantId,
+            status: "delivered",
+            createdAt: { $gte: startDate, $lte: endDate }
+        });
+
+        // Breakdown by order type
+        const dineInRevenue = orders
+            .filter(o => o.tableNumber && !["Home Delivery", "Takeaway", "Take Away"].includes(o.tableNumber))
+            .reduce((sum, o) => sum + (o.totalAmount || 0), 0);
+
+        const takeawayRevenue = orders
+            .filter(o => o.tableNumber && ["Takeaway", "Take Away"].includes(o.tableNumber))
+            .reduce((sum, o) => sum + (o.totalAmount || 0), 0);
+
+        const deliveryRevenue = orders
+            .filter(o => o.tableNumber === "Home Delivery")
+            .reduce((sum, o) => sum + (o.totalAmount || 0), 0);
+
+        const totalRevenue = orders.reduce((sum, o) => sum + (o.totalAmount || 0), 0);
+        const totalOrders = orders.length;
+
+        // Daily breakdown for chart
+        const dayMap = {};
+        orders.forEach(order => {
+            const day = new Date(order.createdAt).toISOString().split("T")[0];
+            if (!dayMap[day]) dayMap[day] = { date: day, revenue: 0, orders: 0 };
+            dayMap[day].revenue += order.totalAmount || 0;
+            dayMap[day].orders += 1;
+        });
+
+        const chartData = Object.values(dayMap).sort((a, b) => new Date(a.date) - new Date(b.date));
+
+        res.json({
+            totalRevenue,
+            totalOrders,
+            dineInRevenue,
+            takeawayRevenue,
+            deliveryRevenue,
+            chartData,
+            period: { from: startDate.toISOString(), to: endDate.toISOString() }
+        });
+
+    } catch (err) {
+        res.status(500).json({ message: err.message });
+    }
+};

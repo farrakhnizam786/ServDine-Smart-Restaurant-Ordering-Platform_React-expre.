@@ -28,6 +28,7 @@ function Menu() {
     const [messages, setMessages] = useState([]);
     const [socket, setSocket] = useState(null);
     const chatEndRef = useRef(null);
+    const [recommendations, setRecommendations] = useState({ popular: [], todaySpecials: [], highlyRecommended: [] });
 
     useEffect(() => {
         chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -66,12 +67,14 @@ function Menu() {
 
         const fetchData = async () => {
             try {
-                const [menuRes, restRes] = await Promise.all([
+                const [menuRes, restRes, recRes] = await Promise.all([
                     API.get(`/menu/${restaurantId}`),
-                    API.get(`/restaurant/${restaurantId}`)
+                    API.get(`/restaurant/${restaurantId}`),
+                    API.get(`/menu/${restaurantId}/recommendations`).catch(() => ({ data: { popular: [], todaySpecials: [], highlyRecommended: [] } }))
                 ]);
                 setMenu(menuRes.data.menu || menuRes.data);
                 setRestaurant(restRes.data);
+                setRecommendations(recRes.data);
             } catch (err) {
                 console.error(err);
                 toast.error("Failed to load menu");
@@ -84,10 +87,16 @@ function Menu() {
 
         const newSocket = io("http://localhost:5000");
         setSocket(newSocket);
+        newSocket.emit("joinRestaurant", restaurantId);
+
+        // 🔥 Real-time price update — admin changes price, all customers see it instantly
+        newSocket.on("menuItemUpdated", ({ item }) => {
+            setMenu(prev => prev.map(m => m._id === item._id ? { ...m, ...item } : m));
+            toast.info(`Menu updated: ${item.name} is now ₹${item.price}`, { autoClose: 3000 });
+        });
 
         if (table) {
             newSocket.emit("joinTable", { restaurantId, table });
-            
             newSocket.on("receiveTableMessage", (msg) => {
                 setMessages(prev => [...prev, msg]);
             });
@@ -215,6 +224,89 @@ function Menu() {
                         />
                     </div>
                 </div>
+
+                {/* Recommendation Sections */}
+                {recommendations.highlyRecommended?.length > 0 && (
+                    <div className="mb-10">
+                        <h2 className="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
+                            <span className="text-2xl">⭐</span> Highly Recommended
+                        </h2>
+                        <div className="flex gap-4 overflow-x-auto pb-3 hide-scrollbar">
+                            {recommendations.highlyRecommended.map(item => (
+                                <motion.div key={item._id} whileHover={{ scale: 1.03 }}
+                                    className="shrink-0 w-44 glass-panel overflow-hidden group cursor-pointer"
+                                    onClick={() => addToCart(item)}>
+                                    <div className="h-28 overflow-hidden bg-gray-100">
+                                        {item.image ? <img src={item.image} alt={item.name} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" /> : <div className="w-full h-full flex items-center justify-center"><UtensilsCrossed className="w-8 h-8 text-gray-300" /></div>}
+                                    </div>
+                                    <div className="p-3">
+                                        <h4 className="font-semibold text-gray-900 text-sm truncate">{item.name}</h4>
+                                        <div className="flex items-center justify-between mt-1">
+                                            <span className="text-brand-primary font-bold text-sm">₹{item.price}</span>
+                                            <span className="text-xs text-brand-gold">+ Add</span>
+                                        </div>
+                                    </div>
+                                </motion.div>
+                            ))}
+                        </div>
+                    </div>
+                )}
+
+                {recommendations.popular?.length > 0 && (
+                    <div className="mb-10">
+                        <h2 className="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
+                            <span className="text-2xl">🔥</span> Most Popular
+                        </h2>
+                        <div className="flex gap-4 overflow-x-auto pb-3 hide-scrollbar">
+                            {recommendations.popular.map(item => (
+                                <motion.div key={item._id} whileHover={{ scale: 1.03 }}
+                                    className="shrink-0 w-44 glass-panel overflow-hidden group cursor-pointer border border-brand-primary/20"
+                                    onClick={() => addToCart(item)}>
+                                    <div className="h-28 overflow-hidden bg-gray-100 relative">
+                                        {item.image ? <img src={item.image} alt={item.name} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" /> : <div className="w-full h-full flex items-center justify-center"><UtensilsCrossed className="w-8 h-8 text-gray-300" /></div>}
+                                        {item.orderCount > 0 && <span className="absolute bottom-2 left-2 bg-brand-primary text-white text-[10px] font-bold px-2 py-0.5 rounded-full">{item.orderCount}x ordered</span>}
+                                    </div>
+                                    <div className="p-3">
+                                        <h4 className="font-semibold text-gray-900 text-sm truncate">{item.name}</h4>
+                                        <div className="flex items-center justify-between mt-1">
+                                            <span className="text-brand-primary font-bold text-sm">₹{item.price}</span>
+                                            <span className="text-xs text-brand-gold">+ Add</span>
+                                        </div>
+                                    </div>
+                                </motion.div>
+                            ))}
+                        </div>
+                    </div>
+                )}
+
+                {recommendations.todaySpecials?.length > 0 && (
+                    <div className="mb-10">
+                        <h2 className="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
+                            <span className="text-2xl">🍽️</span> Today's Specials
+                        </h2>
+                        <div className="flex gap-4 overflow-x-auto pb-3 hide-scrollbar">
+                            {recommendations.todaySpecials.map(item => (
+                                <motion.div key={item._id} whileHover={{ scale: 1.03 }}
+                                    className="shrink-0 w-44 glass-panel overflow-hidden group cursor-pointer border border-brand-gold/30"
+                                    onClick={() => addToCart(item)}>
+                                    <div className="h-28 overflow-hidden bg-gray-100">
+                                        {item.image ? <img src={item.image} alt={item.name} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" /> : <div className="w-full h-full flex items-center justify-center"><UtensilsCrossed className="w-8 h-8 text-gray-300" /></div>}
+                                    </div>
+                                    <div className="p-3">
+                                        <h4 className="font-semibold text-gray-900 text-sm truncate">{item.name}</h4>
+                                        <div className="flex items-center justify-between mt-1">
+                                            <span className="text-brand-gold font-bold text-sm">₹{item.price}</span>
+                                            <span className="text-xs bg-brand-gold/20 text-brand-gold px-1.5 py-0.5 rounded text-[10px] font-bold">NEW</span>
+                                        </div>
+                                    </div>
+                                </motion.div>
+                            ))}
+                        </div>
+                    </div>
+                )}
+
+                {/* All Items heading */}
+                <h2 className="text-xl font-bold text-gray-900 mb-4">Full Menu</h2>
 
                 {/* Menu Grid */}
                 {filteredMenu.length === 0 ? (

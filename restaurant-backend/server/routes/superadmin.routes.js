@@ -10,7 +10,8 @@ const {
     deleteUser,
     updateUserPassword,
     getAllUsers,
-    getDashboardStats
+    getDashboardStats,
+    getRevenueAnalytics
 } = require("../controllers/superadmin.controller");
 
 // 🔥 PUBLIC → create first restaurant + superadmin
@@ -36,5 +37,8 @@ router.get("/users", getAllUsers);
 
 // Get Dashboard Stats
 router.get("/dashboard", getDashboardStats);
+
+// 🔥 Revenue Analytics with filter
+router.get("/revenue", getRevenueAnalytics);
 
 module.exports = router;

@@ -151,6 +151,18 @@ function DeliveryStaffScreen() {
         }
     };
 
+    // 🔥 Broadcast live delivery status to customer (home delivery orders only)
+    const broadcastDeliveryStatus = (orderId, status) => {
+        if (!socket) return;
+        socket.emit("deliveryStatusUpdate", {
+            orderId,
+            status,
+            staffName: user.name,
+            restaurantId: user.restaurantId
+        });
+        toast.success(`Status "${status.replace(/_/g, ' ')}" sent to customer!`);
+    };
+
     const filteredOrders = orders.filter(o => {
         // Ensure we only show delivery/takeaway
         const isDeliveryOrder = o.tableNumber?.toLowerCase().includes("home delivery") || o.tableNumber === "Takeaway";
@@ -351,6 +363,27 @@ function DeliveryStaffScreen() {
                                                 <MessageCircle className="w-4 h-4" />
                                             </button>
                                         </div>
+
+                                        {/* 🔥 Live Delivery Status Broadcast — only for Home Delivery */}
+                                        {order.tableNumber?.toLowerCase().includes("home delivery") && ["preparing", "ready"].includes(order.status) && (
+                                            <div className="mt-3 pt-3 border-t border-gray-100">
+                                                <p className="text-xs text-gray-500 mb-2 font-medium">📡 Update Customer Status:</p>
+                                                <div className="grid grid-cols-2 gap-2">
+                                                    {[
+                                                        { key: "accepted", label: "✅ Accepted" },
+                                                        { key: "picked_up", label: "📦 Picked Up" },
+                                                        { key: "on_the_way", label: "🏍️ On The Way" },
+                                                        { key: "nearby", label: "📍 Nearby" },
+                                                    ].map(s => (
+                                                        <button key={s.key}
+                                                            onClick={() => broadcastDeliveryStatus(order._id, s.key)}
+                                                            className="text-xs py-2 px-3 rounded-lg bg-purple-500/10 text-purple-300 border border-purple-500/20 hover:bg-purple-500/20 transition-colors font-medium">
+                                                            {s.label}
+                                                        </button>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        )}
                                     </div>
                                 </motion.div>
                             );

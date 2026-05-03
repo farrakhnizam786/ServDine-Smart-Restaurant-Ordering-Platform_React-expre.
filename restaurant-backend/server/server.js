@@ -1,3 +1,5 @@
+require("dotenv").config(); // 🔥 MUST be first — loads env vars before any module uses them
+
 const app = require("./app");
 const connectDB = require("./config/db");
 const http = require("http");
@@ -6,8 +8,6 @@ const Order = require("./models/order.model");
 
 const tableRoutes = require("./routes/table.routes");
 const qrRoutes = require("./routes/qr.routes");
-
-require("dotenv").config();
 
 // 🔥 Connect DB
 connectDB();
@@ -110,6 +110,18 @@ io.on("connection", (socket) => {
 
     socket.on("disconnect", () => {
         console.log("User disconnected:", socket.id);
+    });
+
+    // 🔥 Delivery staff broadcasts their live status to the customer's order room
+    socket.on("deliveryStatusUpdate", ({ orderId, status, staffName, restaurantId }) => {
+        if (!orderId) return;
+        // Notify the specific order room (customer's OrderTracking page)
+        io.to(orderId.toString()).emit("deliveryStatusUpdated", { orderId, status, staffName });
+        // Also notify restaurant room so staff/admin can see
+        if (restaurantId) {
+            socket.to(restaurantId.toString()).emit("deliveryStatusUpdated", { orderId, status, staffName });
+        }
+        console.log(`Delivery status for order ${orderId}: ${status}`);
     });
 });
 

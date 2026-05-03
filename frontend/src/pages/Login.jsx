@@ -21,7 +21,7 @@ function Login() {
         try {
             const res = await API.post("/auth/login", { email, password });
             login(res.data);
-            toast.success("Welcome back to DineFlow!");
+            toast.success("Welcome back to ServDine! 🍽️");
 
             const role = res.data.user.role;
             if (role === "admin") navigate("/admin");
@@ -55,7 +55,7 @@ function Login() {
                         <Store className="w-8 h-8 text-gray-900" />
                     </div>
                     <h2 className="text-3xl font-bold text-gray-900 tracking-tight">Sign In</h2>
-                    <p className="text-gray-500 mt-2">Welcome back to DineFlow</p>
+                    <p className="text-gray-500 mt-2">Welcome back to ServDine</p>
                 </div>
 
                 <form onSubmit={handleLogin} className="space-y-5">

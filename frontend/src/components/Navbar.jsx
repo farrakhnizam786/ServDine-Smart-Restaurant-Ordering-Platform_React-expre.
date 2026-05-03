@@ -1,7 +1,8 @@
 import { useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
-import { UtensilsCrossed, LogOut, ShoppingBag, Store, User as UserIcon } from "lucide-react";
+import { LogOut, Store, User as UserIcon } from "lucide-react";
 import { toast } from "react-toastify";
+import logo from "../assets/logo.png";
 
 function Navbar() {
     const navigate = useNavigate();
@@ -23,11 +24,13 @@ function Navbar() {
                     className="flex items-center gap-3 cursor-pointer group"
                     onClick={() => navigate("/")}
                 >
-                    <div className="w-10 h-10 rounded-xl bg-brand-primary flex items-center justify-center shadow-lg shadow-brand-primary/30 group-hover:scale-110 transition-transform">
-                        <UtensilsCrossed className="text-white w-5 h-5" />
-                    </div>
+                    <img 
+                        src={logo} 
+                        alt="ServDine" 
+                        className="h-10 w-auto object-contain group-hover:scale-105 transition-transform drop-shadow-md"
+                    />
                     <h1 className="text-2xl font-black text-gray-900 tracking-tight">
-                        Dine<span className="text-brand-primary">Flow</span>
+                        Serv<span className="text-brand-primary">Dine</span>
                     </h1>
                 </div>
 

@@ -14,6 +14,7 @@ const paymentRoutes = require("./routes/payment.routes");
 const restaurantRoutes = require("./routes/restaurant.routes");
 const editorAdminRoutes = require("./routes/editoradmin.routes");
 const reviewRoutes = require("./routes/review.routes");
+const proxyRoutes = require("./routes/proxy.routes");
 
 
 
@@ -40,6 +41,7 @@ app.use("/api/test", testRoutes);
 app.use("/api/restaurant", restaurantRoutes);
 app.use("/api/editoradmin", editorAdminRoutes);
 app.use("/api/reviews", reviewRoutes);
+app.use("/api/proxy", proxyRoutes); // 🔥 Reverse proxy
 
 app.get("/", (req, res) => {
     res.send("API Running...");

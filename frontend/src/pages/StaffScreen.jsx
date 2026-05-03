@@ -237,6 +237,7 @@ function Orders() {
             case "preparing": return { color: "text-blue-500", bg: "bg-blue-500/10", icon: ChefHat, label: "Preparing" };
             case "ready": return { color: "text-brand-primary", bg: "bg-brand-primary/10", icon: Package, label: "Ready" };
             case "delivered": return { color: "text-green-500", bg: "bg-green-500/10", icon: CheckCircle2, label: "Completed" };
+            case "cancelled": return { color: "text-red-500", bg: "bg-red-500/10", icon: X, label: "Cancelled" };
             default: return { color: "text-gray-500", bg: "bg-gray-500/10", icon: Clock, label: status };
         }
     };
@@ -294,13 +295,15 @@ function Orders() {
                             <button
                                 key={f}
                                 onClick={() => setFilter(f)}
-                                className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-                                    filter === f 
-                                    ? "bg-white text-gray-900 shadow" 
+                                className={`px-3 py-2 rounded-lg text-sm font-medium transition-all whitespace-nowrap ${
+                                    filter === f
+                                    ? "bg-white text-gray-900 shadow"
                                     : "text-gray-500 hover:text-gray-900"
-                                }`}
+                                } ${f === "cancelled" && filter !== "cancelled" ? "text-red-400" : ""}`}
                             >
                                 {f.charAt(0).toUpperCase() + f.slice(1)}
+                                {f === "active" && <span className="ml-1 text-xs bg-yellow-400/20 text-yellow-600 px-1.5 rounded-full">{orders.filter(o => ["pending","preparing","ready"].includes(o.status) && o.tableNumber !== "Takeaway" && !o.tableNumber?.toLowerCase().includes("home delivery")).length}</span>}
+                                {f === "cancelled" && <span className="ml-1 text-xs bg-red-400/20 text-red-500 px-1.5 rounded-full">{orders.filter(o => o.status === "cancelled" && o.tableNumber !== "Takeaway" && !o.tableNumber?.toLowerCase().includes("home delivery")).length}</span>}
                             </button>
                         ))}
                     </div>

@@ -46,7 +46,7 @@ function Register() {
                         <Store className="w-8 h-8 text-gray-900" />
                     </div>
                     <h2 className="text-3xl font-bold text-gray-900 tracking-tight">Create Account</h2>
-                    <p className="text-gray-500 mt-2">Join DineFlow today</p>
+                    <p className="text-gray-500 mt-2">Join ServDine today</p>
                 </div>
 
                 <form onSubmit={handleRegister} className="space-y-5">

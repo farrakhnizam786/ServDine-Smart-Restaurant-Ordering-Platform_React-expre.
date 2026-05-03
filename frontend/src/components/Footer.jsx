@@ -73,7 +73,7 @@ function Footer() {
 
                 <div className="border-t border-gray-100 pt-8 flex flex-col md:flex-row items-center justify-between gap-4">
                     <p className="text-gray-500 text-sm">
-                        &copy; {new Date().getFullYear()} DineFlow Technologies Pvt. Ltd. All rights reserved.
+                        &copy; {new Date().getFullYear()} ServDine Technologies Pvt. Ltd. All rights reserved.
                     </p>
                     <div className="flex gap-4 text-sm text-gray-500">
                         <span>FSSAI License No: 12345678901234</span>

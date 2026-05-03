@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import API from "../api/axios";
 import { toast } from "react-toastify";
 import { io } from "socket.io-client";
-import { TrendingUp, Package, IndianRupee, Store, Users, Key, Trash2, Power, UtensilsCrossed } from "lucide-react";
+import { TrendingUp, Package, IndianRupee, Store, Users, Key, Trash2, Power, UtensilsCrossed, Receipt } from "lucide-react";
 import { motion } from "framer-motion";
 
 function AdminDashboard() {
@@ -15,7 +15,7 @@ function AdminDashboard() {
     });
     const [staff, setStaff] = useState([]);
     const [loading, setLoading] = useState(true);
-    const [activeTab, setActiveTab] = useState("overview"); // overview, staff, coupons
+    const [activeTab, setActiveTab] = useState("overview"); // overview, staff, coupons, tax
     const [coupons, setCoupons] = useState([]);
     const [couponCode, setCouponCode] = useState("");
     const [couponDiscount, setCouponDiscount] = useState("");
@@ -29,6 +29,12 @@ function AdminDashboard() {
     const [creating, setCreating] = useState(false);
     const [isRestaurantOpen, setIsRestaurantOpen] = useState(true);
     const [togglingOpen, setTogglingOpen] = useState(false);
+
+    // GST/Tax settings
+    const [gstPct, setGstPct] = useState(0);
+    const [serviceChargePct, setServiceChargePct] = useState(0);
+    const [gstNumber, setGstNumber] = useState("");
+    const [savingTax, setSavingTax] = useState(false);
 
     const fetchData = async () => {
         try {
@@ -183,37 +189,20 @@ function AdminDashboard() {
             </h1>
 
             {/* Tabs */}
-            <div className="flex bg-gray-500 p-1 rounded-xl border border-gray-100 w-max mb-8">
-                <button
-                    onClick={() => setActiveTab("overview")}
-                    className={`flex items-center gap-2 px-6 py-2.5 rounded-lg text-sm font-medium transition-all ${
-                        activeTab === "overview" 
-                        ? "bg-brand-primary text-gray-900 shadow-lg shadow-brand-primary/20" 
-                        : "text-gray-500 hover:text-gray-900 hover:bg-gray-50"
-                    }`}
-                >
-                    <TrendingUp className="w-4 h-4" /> Overview
-                </button>
-                <button
-                    onClick={() => setActiveTab("staff")}
-                    className={`flex items-center gap-2 px-6 py-2.5 rounded-lg text-sm font-medium transition-all ${
-                        activeTab === "staff" 
-                        ? "bg-brand-primary text-gray-900 shadow-lg shadow-brand-primary/20" 
-                        : "text-gray-500 hover:text-gray-900 hover:bg-gray-50"
-                    }`}
-                >
-                    <Users className="w-4 h-4" /> Manage Staff
-                </button>
-                <button
-                    onClick={() => setActiveTab("coupons")}
-                    className={`flex items-center gap-2 px-6 py-2.5 rounded-lg text-sm font-medium transition-all ${
-                        activeTab === "coupons" 
-                        ? "bg-brand-primary text-gray-900 shadow-lg shadow-brand-primary/20" 
-                        : "text-gray-500 hover:text-gray-900 hover:bg-gray-50"
-                    }`}
-                >
-                    <Package className="w-4 h-4" /> Manage Coupons
-                </button>
+            <div className="flex flex-wrap gap-1 bg-gray-100 p-1 rounded-xl w-max mb-8">
+                {[
+                    { id: "overview", label: "Overview", icon: TrendingUp },
+                    { id: "staff", label: "Manage Staff", icon: Users },
+                    { id: "coupons", label: "Coupons", icon: Package },
+                    { id: "tax", label: "GST & Tax", icon: Receipt },
+                ].map(({ id, label, icon: Icon }) => (
+                    <button key={id} onClick={() => setActiveTab(id)}
+                        className={`flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-medium transition-all ${
+                            activeTab === id ? "bg-brand-primary text-gray-900 shadow" : "text-gray-500 hover:text-gray-900"
+                        }`}>
+                        <Icon className="w-4 h-4" /> {label}
+                    </button>
+                ))}
             </div>
 
             {activeTab === "overview" && (
@@ -463,6 +452,56 @@ function AdminDashboard() {
                             </tbody>
                         </table>
                     </div>
+                </div>
+            </motion.div>
+            )}
+
+            {/* GST & TAX TAB */}
+            {activeTab === "tax" && (
+            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="max-w-xl">
+                <div className="glass-panel p-6">
+                    <h2 className="text-xl font-bold text-gray-900 mb-2 flex items-center gap-2">
+                        <Receipt className="w-5 h-5 text-brand-primary" /> GST & Tax Settings
+                    </h2>
+                    <p className="text-sm text-gray-500 mb-6">These taxes will be automatically applied to all customer orders at checkout.</p>
+                    <form onSubmit={async (e) => {
+                        e.preventDefault(); setSavingTax(true);
+                        try {
+                            await API.put("/restaurant/tax-settings", { gstPercentage: Number(gstPct), serviceChargePercentage: Number(serviceChargePct), gstNumber });
+                            toast.success("Tax settings saved!");
+                        } catch { toast.error("Failed to save tax settings"); }
+                        finally { setSavingTax(false); }
+                    }} className="space-y-5">
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-2">GST Number (GSTIN)</label>
+                            <input type="text" value={gstNumber} onChange={e => setGstNumber(e.target.value)}
+                                className="w-full bg-brand-light border border-gray-200 rounded-xl px-4 py-3 text-gray-900 focus:border-brand-primary"
+                                placeholder="e.g. 22AAAAA0000A1Z5" />
+                        </div>
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-2">GST Percentage (%)</label>
+                            <input type="number" min="0" max="100" step="0.5" value={gstPct} onChange={e => setGstPct(e.target.value)}
+                                className="w-full bg-brand-light border border-gray-200 rounded-xl px-4 py-3 text-gray-900 focus:border-brand-primary"
+                                placeholder="e.g. 5 or 18" />
+                            <p className="text-xs text-gray-400 mt-1">Common rates: 5% (restaurants), 18% (fine dining with AC)</p>
+                        </div>
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-2">Service Charge (%)</label>
+                            <input type="number" min="0" max="100" step="0.5" value={serviceChargePct} onChange={e => setServiceChargePct(e.target.value)}
+                                className="w-full bg-brand-light border border-gray-200 rounded-xl px-4 py-3 text-gray-900 focus:border-brand-primary"
+                                placeholder="e.g. 10" />
+                            <p className="text-xs text-gray-400 mt-1">Optional. Leave 0 if not applicable.</p>
+                        </div>
+                        <div className="bg-brand-primary/5 border border-brand-primary/20 rounded-xl p-4 text-sm">
+                            <p className="font-semibold text-gray-900 mb-1">Preview on ₹500 order:</p>
+                            <p className="text-gray-600">GST ({gstPct}%): ₹{((Number(gstPct) / 100) * 500).toFixed(2)}</p>
+                            <p className="text-gray-600">Service Charge ({serviceChargePct}%): ₹{((Number(serviceChargePct) / 100) * 500).toFixed(2)}</p>
+                            <p className="font-bold text-gray-900 mt-1">Total: ₹{(500 + (Number(gstPct) / 100) * 500 + (Number(serviceChargePct) / 100) * 500).toFixed(2)}</p>
+                        </div>
+                        <button disabled={savingTax} type="submit" className="glass-button w-full !py-4">
+                            {savingTax ? "Saving..." : "💾 Save Tax Settings"}
+                        </button>
+                    </form>
                 </div>
             </motion.div>
             )}
