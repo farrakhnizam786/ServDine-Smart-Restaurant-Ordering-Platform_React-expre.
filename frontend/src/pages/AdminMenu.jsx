@@ -1,10 +1,12 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import API from "../api/axios";
 import { toast } from "react-toastify";
-import { UtensilsCrossed, Plus, Trash2, Edit } from "lucide-react";
+import { UtensilsCrossed, Plus, Trash2, Edit, ChevronLeft } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
 function AdminMenu() {
+    const navigate = useNavigate();
     const [menu, setMenu] = useState([]);
     const [loading, setLoading] = useState(true);
     
@@ -72,10 +74,15 @@ function AdminMenu() {
 
     return (
         <div className="p-6 max-w-7xl mx-auto space-y-8">
-            <h1 className="text-3xl font-bold text-gray-900 tracking-tight flex items-center gap-3">
-                <UtensilsCrossed className="w-8 h-8 text-brand-primary" /> 
-                Menu Management {user.restaurantName ? `- ${user.restaurantName}` : ''}
-            </h1>
+            <div className="flex items-center gap-4">
+                <button onClick={() => navigate(-1)} className="p-2 bg-white hover:bg-gray-50 rounded-xl transition-colors border border-gray-200 shadow-sm">
+                    <ChevronLeft className="w-6 h-6 text-gray-700" />
+                </button>
+                <h1 className="text-3xl font-bold text-gray-900 tracking-tight flex items-center gap-3">
+                    <UtensilsCrossed className="w-8 h-8 text-brand-primary" /> 
+                    Menu Management {user.restaurantName ? `- ${user.restaurantName}` : ''}
+                </h1>
+            </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                 {/* Form */}

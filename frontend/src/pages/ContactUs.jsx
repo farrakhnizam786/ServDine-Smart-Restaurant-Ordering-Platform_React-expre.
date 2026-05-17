@@ -33,7 +33,7 @@ function ContactUs() {
                                 </div>
                                 <div>
                                     <p className="text-sm text-gray-500 mb-1">Email Address</p>
-                                    <p className="font-medium text-gray-900">support@dineflow.com</p>
+                                    <p className="font-medium text-gray-900">support@servdine.com</p>
                                 </div>
                             </div>
                             <div className="flex items-center gap-4">

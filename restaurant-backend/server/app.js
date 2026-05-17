@@ -15,6 +15,7 @@ const restaurantRoutes = require("./routes/restaurant.routes");
 const editorAdminRoutes = require("./routes/editoradmin.routes");
 const reviewRoutes = require("./routes/review.routes");
 const proxyRoutes = require("./routes/proxy.routes");
+const reservationRoutes = require("./routes/reservation.routes");
 
 
 
@@ -42,6 +43,7 @@ app.use("/api/restaurant", restaurantRoutes);
 app.use("/api/editoradmin", editorAdminRoutes);
 app.use("/api/reviews", reviewRoutes);
 app.use("/api/proxy", proxyRoutes); // 🔥 Reverse proxy
+app.use("/api/reservations", reservationRoutes); // 🔥 Table Reservations
 
 app.get("/", (req, res) => {
     res.send("API Running...");

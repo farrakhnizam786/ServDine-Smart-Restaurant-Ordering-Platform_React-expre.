@@ -143,7 +143,7 @@ exports.updateMenuItem = async (req, res) => {
     }
 };
 
-// 🔥 Smart Recommendations — popular items + category affinity
+// 🔥 Smart Recommendations — popularity-based with daily thresholds
 exports.getRecommendations = async (req, res) => {
     try {
         const { restaurantId } = req.params;
@@ -152,51 +152,63 @@ exports.getRecommendations = async (req, res) => {
             return res.status(400).json({ message: "Invalid restaurant ID" });
         }
 
-        // Get all menu items
         const allItems = await Menu.find({ restaurantId }).select("-__v");
 
-        // Get last 30 days of delivered orders to calculate popularity
-        const since = new Date();
-        since.setDate(since.getDate() - 30);
+        // All-time orders (delivered)
+        const allOrders = await Order.find({ restaurantId, status: "delivered" });
 
-        const recentOrders = await Order.find({
+        // Today's orders (delivered)
+        const todayStart = new Date();
+        todayStart.setHours(0, 0, 0, 0);
+        const todayOrders = await Order.find({
             restaurantId,
             status: "delivered",
-            createdAt: { $gte: since }
+            createdAt: { $gte: todayStart }
         });
 
-        // Count item frequency
-        const itemFrequency = {};
-        recentOrders.forEach(order => {
+        // Count all-time frequency
+        const totalFreq = {};
+        allOrders.forEach(order => {
             (order.items || []).forEach(item => {
                 const key = item.menuItemId?.toString() || item.name;
-                itemFrequency[key] = (itemFrequency[key] || 0) + (item.quantity || 1);
+                totalFreq[key] = (totalFreq[key] || 0) + (item.quantity || 1);
             });
         });
 
-        // Enrich items with order count
+        // Count today's frequency
+        const todayFreq = {};
+        todayOrders.forEach(order => {
+            (order.items || []).forEach(item => {
+                const key = item.menuItemId?.toString() || item.name;
+                todayFreq[key] = (todayFreq[key] || 0) + (item.quantity || 1);
+            });
+        });
+
+        // Enrich items
         const enriched = allItems.map(item => ({
             ...item.toObject(),
-            orderCount: itemFrequency[item._id.toString()] || 0
+            orderCount: totalFreq[item._id.toString()] || 0,
+            todayCount: todayFreq[item._id.toString()] || 0,
         }));
 
-        // Sort by order count desc — top 8 = "Most Popular"
-        const popular = [...enriched]
-            .sort((a, b) => b.orderCount - a.orderCount)
+        // Today's Specials: ordered MORE than 20 times today
+        const todaySpecials = enriched
+            .filter(i => i.todayCount > 20)
+            .sort((a, b) => b.todayCount - a.todayCount)
             .slice(0, 8);
 
-        // Today's specials = recently added items (last 7 days) with at least some orders OR new items
-        const sevenDaysAgo = new Date();
-        sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
-        const todaySpecials = enriched
-            .filter(i => new Date(i.createdAt) >= sevenDaysAgo)
-            .slice(0, 6);
-
-        // Highly recommended = intersection of popular + good description
+        // Highly Recommended: ordered MORE than 50 times total OR MORE than 30 times today
         const highlyRecommended = enriched
-            .filter(i => i.orderCount >= 1 || (i.description && i.description.length > 10))
+            .filter(i => i.orderCount > 50 || i.todayCount > 30)
+            .sort((a, b) => (b.orderCount + b.todayCount * 2) - (a.orderCount + a.todayCount * 2))
+            .slice(0, 8);
+
+        // Most Popular: top ordered overall (excludes items already in highlyRecommended)
+        const hrIds = new Set(highlyRecommended.map(i => i._id.toString()));
+        const popular = enriched
+            .filter(i => i.orderCount > 0 && !hrIds.has(i._id.toString()))
             .sort((a, b) => b.orderCount - a.orderCount)
-            .slice(0, 6);
+            .slice(0, 8);
 
         res.json({ popular, todaySpecials, highlyRecommended });
 

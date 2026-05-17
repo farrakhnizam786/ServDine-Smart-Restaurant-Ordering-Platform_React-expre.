@@ -16,8 +16,8 @@ function Navbar() {
     };
 
     return (
-        <nav className="fixed top-0 left-0 w-full z-50 glass-panel border-x-0 border-t-0 rounded-none bg-brand-light/80 px-6 py-4 transition-all duration-300">
-            <div className="max-w-7xl mx-auto flex justify-between items-center">
+        <nav className="fixed top-0 left-0 w-full z-50 glass-panel border-x-0 border-t-0 rounded-none bg-brand-light/80 px-3 sm:px-6 py-4 transition-all duration-300">
+            <div className="max-w-7xl mx-auto flex justify-between items-center gap-2">
                 
                 {/* Logo */}
                 <div 
@@ -27,21 +27,21 @@ function Navbar() {
                     <img 
                         src={logo} 
                         alt="ServDine" 
-                        className="h-10 w-auto object-contain group-hover:scale-105 transition-transform drop-shadow-md"
+                        className="h-8 sm:h-10 w-auto object-contain group-hover:scale-105 transition-transform drop-shadow-md shrink-0"
                     />
-                    <h1 className="text-2xl font-black text-gray-900 tracking-tight">
+                    <h1 className="text-xl sm:text-2xl font-black text-gray-900 tracking-tight hidden sm:block">
                         Serv<span className="text-brand-primary">Dine</span>
                     </h1>
                 </div>
 
                 {/* Navigation Links */}
-                <div className="flex items-center gap-6">
+                <div className="flex items-center gap-3 sm:gap-6 shrink-0">
                     {user ? (
                         <>
                             {user.role === 'customer' && (
                                 <button 
-                                    onClick={() => navigate("/")} 
-                                    className={`flex items-center gap-2 text-sm font-medium transition-colors ${location.pathname === '/' ? 'text-brand-primary' : 'text-gray-700 hover:text-gray-900'}`}
+                                    onClick={() => navigate("/restaurants")} 
+                                    className={`flex items-center gap-2 text-sm font-medium transition-colors ${location.pathname === '/restaurants' ? 'text-brand-primary' : 'text-gray-700 hover:text-gray-900'}`}
                                 >
                                     <Store className="w-4 h-4" /> Discover
                                 </button>
@@ -58,22 +58,25 @@ function Navbar() {
                                     }} 
                                     className={`flex items-center gap-2 text-sm font-medium transition-colors ${['/admin', '/superadmin', '/orders', '/staff-screen', '/editoradmin'].includes(location.pathname) ? 'text-brand-primary' : 'text-gray-700 hover:text-gray-900'}`}
                                 >
-                                    <Store className="w-4 h-4" /> Dashboard
+                                    <Store className="w-4 h-4" /> <span className="hidden sm:inline">Dashboard</span>
                                 </button>
                             )}
 
                             <div className="h-6 w-px bg-gray-100 mx-2"></div>
-                            
-                            <div className="relative group cursor-pointer pb-2 -mb-2">
-                                <div className="flex items-center gap-2 text-gray-700 bg-gray-50 py-1.5 px-3 rounded-full border border-gray-100 hover:bg-gray-100 transition-colors">
-                                    <UserIcon className="w-4 h-4 text-brand-gold" />
-                                    <span className="text-sm">{user.name}</span>
-                                </div>
+                            {/* Profile Dropdown */}
+                            <div className="relative group">
+                                <button className="flex items-center gap-2 bg-white border border-gray-200 px-3 py-1.5 sm:px-4 sm:py-2 rounded-full hover:bg-gray-50 transition-colors shadow-sm">
+                                    <UserIcon className="w-4 h-4 text-brand-primary shrink-0" />
+                                    <span className="text-sm font-semibold text-gray-700 truncate max-w-[80px] sm:max-w-none">{user.name || "Profile"}</span>
+                                </button>
                                 
                                 <div className="absolute right-0 top-full mt-2 w-56 bg-brand-light/95 backdrop-blur-md border border-gray-200 rounded-xl shadow-[0_8px_30px_rgb(0,0,0,0.5)] opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 z-[100] flex flex-col py-2 transform origin-top-right scale-95 group-hover:scale-100">
                                     {user.role === 'customer' && (
                                         <>
                                             <button onClick={() => navigate("/profile")} className="text-left px-4 py-2.5 text-sm text-gray-700 hover:text-gray-900 hover:bg-gray-50 transition-colors">Profile Information</button>
+                                            <button onClick={() => navigate("/my-reservations")} className="text-left px-4 py-2.5 text-sm text-gray-700 hover:text-gray-900 hover:bg-gray-50 transition-colors flex items-center gap-2">
+                                                📅 My Reservations
+                                            </button>
                                             <button onClick={() => navigate("/orders/status")} className="text-left px-4 py-2.5 text-sm text-gray-700 hover:text-gray-900 hover:bg-gray-50 transition-colors">Order Status & Live Chat</button>
                                             <button onClick={() => navigate("/orders/history")} className="text-left px-4 py-2.5 text-sm text-gray-700 hover:text-gray-900 hover:bg-gray-50 transition-colors">Order History & Bills</button>
                                             <button onClick={() => navigate("/coupons")} className="text-left px-4 py-2.5 text-sm text-gray-700 hover:text-gray-900 hover:bg-gray-50 transition-colors">Coupons & Offers</button>

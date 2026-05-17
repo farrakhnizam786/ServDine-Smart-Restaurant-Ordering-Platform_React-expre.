@@ -85,12 +85,29 @@ const restaurantSchema = new mongoose.Schema(
             type: String,
             default: "",
         },
-        // payment mode: razorpay | upi | bank | cash
         paymentMode: {
             type: String,
             enum: ["razorpay", "upi", "bank", "cash"],
             default: "cash",
         },
+
+        // 🔥 Banners and Offers (Festival posters, flash cards)
+        banners: [
+            {
+                url: { type: String, required: true },
+                title: { type: String },
+                isActive: { type: Boolean, default: true }
+            }
+        ],
+
+        // 🔥 Category wise discounts (Timed)
+        categoryDiscounts: [
+            {
+                category: { type: String, required: true },
+                discountPercentage: { type: Number, required: true },
+                expiresAt: { type: Date, required: true }
+            }
+        ]
     },
     { timestamps: true }
 );

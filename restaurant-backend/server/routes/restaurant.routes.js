@@ -11,7 +11,8 @@ const {
     updateTaxSettings,
     getTaxSettings,
     updatePaymentSettings,
-    getPaymentSettings
+    getPaymentSettings,
+    updateOffers
 } = require("../controllers/restaurant.controller");
 
 // 🔥 Public
@@ -24,6 +25,7 @@ router.get("/:id/tax", getTaxSettings); // Public — cart needs this
 // 🔥 Protected (admin can toggle open/close + update GST)
 router.put("/toggle-open", protect, authorize("admin", "kitchen", "superadmin"), toggleOpen);
 router.put("/tax-settings", protect, authorize("admin", "superadmin"), updateTaxSettings);
+router.put("/offers", protect, authorize("admin", "superadmin"), updateOffers);
 
 // 🔥 SuperAdmin only — payment settings
 router.put("/payment-settings", protect, authorize("superadmin"), updatePaymentSettings);

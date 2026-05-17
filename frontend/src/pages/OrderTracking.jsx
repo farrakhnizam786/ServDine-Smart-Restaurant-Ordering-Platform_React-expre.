@@ -75,7 +75,7 @@ function OrderTracking() {
 
     // Socket setup immediately on mount
     useEffect(() => {
-        const socket = io("http://localhost:5000");
+        const socket = io(`http://${window.location.hostname}:5000`);
         socketRef.current = socket;
 
         socket.emit("joinOrderRoom", orderId);

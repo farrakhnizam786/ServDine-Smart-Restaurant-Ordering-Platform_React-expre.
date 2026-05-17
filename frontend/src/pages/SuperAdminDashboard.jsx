@@ -1,9 +1,10 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import API from "../api/axios";
 import { toast } from "react-toastify";
 import { 
     Users, Trash2, Plus, ShieldCheck, IndianRupee, UtensilsCrossed, TrendingUp, Key,
-    CreditCard, QrCode, Building2, Smartphone, BarChart3, Calendar, ChevronDown
+    CreditCard, QrCode, Building2, Smartphone, BarChart3, Calendar, ChevronDown, LogOut, ChevronLeft
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "../context/AuthContext";
@@ -17,6 +18,7 @@ const FILTERS = [
 ];
 
 function SuperAdminDashboard() {
+    const navigate = useNavigate();
     const { user } = useAuth();
     const [stats, setStats] = useState(null);
     const [users, setUsers] = useState([]);
@@ -145,6 +147,21 @@ function SuperAdminDashboard() {
 
     return (
         <div className="p-6 max-w-7xl mx-auto space-y-8 min-h-screen">
+            {/* Top Navigation Bar */}
+            <div className="flex justify-between items-center bg-white p-4 rounded-2xl shadow-sm border border-gray-100">
+                <button onClick={() => navigate(-1)} className="text-gray-500 hover:text-gray-900 font-bold flex items-center gap-2 text-sm transition-colors">
+                    <ChevronLeft className="w-4 h-4"/> Back
+                </button>
+                <div className="flex items-center gap-4">
+                    <div onClick={() => navigate("/profile")} className="w-8 h-8 rounded-full bg-gradient-to-br from-orange-400 to-red-400 flex items-center justify-center text-white font-bold text-xs cursor-pointer hover:opacity-80 transition-opacity" title="Edit Profile">
+                        {(user?.name || "S")[0].toUpperCase()}
+                    </div>
+                    <button onClick={() => { localStorage.clear(); navigate("/login"); }} className="text-red-500 hover:text-red-700 font-bold flex items-center gap-2 text-sm transition-colors">
+                        <LogOut className="w-4 h-4"/> Sign Out
+                    </button>
+                </div>
+            </div>
+
             <h1 className="text-3xl font-bold text-gray-900 tracking-tight flex items-center gap-3">
                 <ShieldCheck className="w-8 h-8 text-brand-primary" />
                 SuperAdmin {user?.restaurantName ? `— ${user.restaurantName}` : ''}

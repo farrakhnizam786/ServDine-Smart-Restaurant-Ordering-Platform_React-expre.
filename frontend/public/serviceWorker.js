@@ -9,6 +9,6 @@ self.addEventListener("activate", (event) => {
 });
 
 self.addEventListener("fetch", (event) => {
-    // basic fetch handling — pass through all requests
-    event.respondWith(fetch(event.request));
+    // Currently bypassing SW fetch interception to prevent network errors in dev mode.
+    // Add caching strategies here later if needed.
 });

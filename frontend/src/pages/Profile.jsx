@@ -1,6 +1,7 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
-import { User, Mail, Phone, MapPin, Edit3, Save, X } from "lucide-react";
+import { User, Mail, Phone, MapPin, Edit3, Save, X, ChevronLeft } from "lucide-react";
 import { motion } from "framer-motion";
 import { toast } from "react-toastify";
 
@@ -25,8 +26,13 @@ function Profile() {
         // Here you would typically make an API call to update the user
     };
 
+    const navigate = useNavigate();
+
     return (
-        <div className="min-h-screen p-6 max-w-3xl mx-auto pt-24">
+        <div className="min-h-screen p-6 max-w-3xl mx-auto pt-24 relative">
+            <button onClick={() => navigate(-1)} className="absolute top-8 left-6 text-gray-500 hover:text-gray-900 font-bold flex items-center gap-2 text-sm transition-colors bg-white px-4 py-2 rounded-xl shadow-sm border border-gray-100">
+                <ChevronLeft className="w-4 h-4"/> Back
+            </button>
             <h1 className="text-3xl font-bold text-gray-900 mb-2">My Profile</h1>
             <p className="text-gray-500 mb-8">Manage your account information</p>
 

@@ -131,3 +131,18 @@ exports.getPaymentSettings = async (req, res) => {
         res.status(500).json({ message: err.message });
     }
 };
+
+// 🔥 Update Banners and Offers
+exports.updateOffers = async (req, res) => {
+    try {
+        const { banners, categoryDiscounts } = req.body;
+        const restaurant = await Restaurant.findByIdAndUpdate(
+            req.user.restaurantId,
+            { banners, categoryDiscounts },
+            { new: true }
+        );
+        res.json({ message: "Offers updated successfully", restaurant });
+    } catch (err) {
+        res.status(500).json({ message: err.message });
+    }
+};

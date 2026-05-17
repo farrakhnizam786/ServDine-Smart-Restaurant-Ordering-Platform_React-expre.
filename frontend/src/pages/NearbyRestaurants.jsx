@@ -5,6 +5,19 @@ import { io } from "socket.io-client";
 import { MapPin, Search, Star, Navigation, MessageCircleHeart, X } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
+function FloatEmoji({ emoji, x, y, delay }) {
+    return (
+        <motion.div
+            className="absolute text-4xl select-none pointer-events-none z-[-1]"
+            style={{ left: x, top: y }}
+            animate={{ y: [-12, 12, -12], rotate: [-8, 8, -8], opacity: [0.3, 0.6, 0.3] }}
+            transition={{ duration: 5, repeat: Infinity, delay, ease: "easeInOut" }}
+        >
+            {emoji}
+        </motion.div>
+    );
+}
+
 function NearbyRestaurants() {
     const [restaurants, setRestaurants] = useState([]);
     const [ratings, setRatings] = useState({}); // { restaurantId: { avg, count } }
@@ -21,11 +34,11 @@ function NearbyRestaurants() {
     // Fetch all restaurants
     const fetchRestaurants = async (lat, lng) => {
         try {
-            const res = await axios.get(`http://localhost:5000/api/restaurant/nearby?lat=${lat}&lng=${lng}`);
+            const res = await axios.get(`http://${window.location.hostname}:5000/api/restaurant/nearby?lat=${lat}&lng=${lng}`);
             setRestaurants(res.data);
             // Fetch ratings for all restaurants
             res.data.forEach(r => {
-                axios.get(`http://localhost:5000/api/reviews/${r._id}`)
+                axios.get(`http://${window.location.hostname}:5000/api/reviews/${r._id}`)
                     .then(rv => setRatings(prev => ({ ...prev, [r._id]: { avg: rv.data.avgRating, count: rv.data.count } })))
                     .catch(() => {});
             });
@@ -73,7 +86,7 @@ function NearbyRestaurants() {
         }
 
         // Real-time open/close updates
-        const socket = io("http://localhost:5000");
+        const socket = io(`http://${window.location.hostname}:5000`);
         socket.on("restaurantStatusChanged", ({ restaurantId, isOpen }) => {
             setRestaurants(prev => prev.map(r => r._id === restaurantId ? { ...r, isOpen } : r));
         });
@@ -133,8 +146,13 @@ function NearbyRestaurants() {
     };
 
     return (
-        <div className="min-h-screen pt-12 pb-24 px-6 max-w-7xl mx-auto">
-
+        <div className="min-h-screen pt-12 pb-24 px-6 max-w-7xl mx-auto relative">
+            {/* Animated background emojis */}
+            <FloatEmoji emoji="🍔" x="5%" y="10%" delay={0} />
+            <FloatEmoji emoji="🍕" x="85%" y="15%" delay={0.5} />
+            <FloatEmoji emoji="🍜" x="8%" y="65%" delay={1} />
+            <FloatEmoji emoji="🌮" x="90%" y="70%" delay={1.5} />
+            
             {/* Header */}
             <div className="text-center mb-12 space-y-6">
                 <motion.div

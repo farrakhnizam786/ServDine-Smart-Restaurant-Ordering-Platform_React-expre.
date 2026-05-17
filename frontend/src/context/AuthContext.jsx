@@ -1,35 +1,42 @@
-import { createContext, useState, useContext } from "react";
+import { createContext, useState, useContext, useCallback } from "react";
 
-export const AuthContext = createContext();
+export const AuthContext = createContext(null);
 
-export const useAuth = () => useContext(AuthContext);
+export const useAuth = () => {
+    const ctx = useContext(AuthContext);
+    if (!ctx) throw new Error("useAuth must be used within an AuthProvider");
+    return ctx;
+};
 
-export const AuthProvider = ({ children }) => {
-    // Check local storage for user state on initial load
-    const [user, setUser] = useState(() => {
+function getInitialUser() {
+    try {
         const token = localStorage.getItem("token");
-        if (token) {
-            // Ideally decode token or fetch user, but as a mock we return a user object if token exists
-            return JSON.parse(localStorage.getItem("user")) || null;
-        }
-        return null;
-    });
+        const user = localStorage.getItem("user");
+        if (token && user) return JSON.parse(user);
+    } catch {
+        // corrupted storage
+    }
+    return null;
+}
 
-    const login = (data) => {
+export function AuthProvider({ children }) {
+    const [user, setUser] = useState(getInitialUser);
+
+    const login = useCallback((data) => {
         localStorage.setItem("token", data.token);
         localStorage.setItem("user", JSON.stringify(data.user));
         setUser(data.user);
-    };
+    }, []);
 
-    const logout = () => {
+    const logout = useCallback(() => {
         localStorage.removeItem("token");
         localStorage.removeItem("user");
         setUser(null);
-    };
+    }, []);
 
     return (
         <AuthContext.Provider value={{ user, login, logout }}>
             {children}
         </AuthContext.Provider>
     );
-};
+}

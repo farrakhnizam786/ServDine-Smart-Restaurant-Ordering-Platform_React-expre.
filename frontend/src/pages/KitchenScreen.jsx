@@ -1,16 +1,24 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import API from "../api/axios";
 import { toast } from "react-toastify";
 import { io } from "socket.io-client";
-import { Clock, ChefHat, CheckCircle2, Package, BellRing, Users, UserCheck, Truck, ShoppingBag, Bell, X, MessageCircle } from "lucide-react";
+import { Clock, ChefHat, CheckCircle2, Package, BellRing, Users, UserCheck, Truck, ShoppingBag, Bell, X, MessageCircle, CalendarCheck, Phone, LogOut, ChevronLeft } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
 function KitchenScreen() {
+    const navigate = useNavigate();
+    const user = JSON.parse(localStorage.getItem("user") || "{}");
     const [orders, setOrders] = useState([]);
     const [loading, setLoading] = useState(true);
     const [filter, setFilter] = useState("all");
     const [isRestaurantOpen, setIsRestaurantOpen] = useState(true);
     const [togglingOpen, setTogglingOpen] = useState(false);
+    
+    // Kitchen Selection State
+    const [kitchenList, setKitchenList] = useState([]);
+    const [selectedKitchen, setSelectedKitchen] = useState(user.role === 'kitchen' ? user._id : "");
+
     const [replyText, setReplyText] = useState({});
     const [activeStaff, setActiveStaff] = useState([]);
     const [callingStaff, setCallingStaff] = useState({}); // keyed by orderId
@@ -21,6 +29,10 @@ function KitchenScreen() {
     const [unreadCount, setUnreadCount] = useState(0);
     const [incomingCall, setIncomingCall] = useState(null);
     const [tableCalls, setTableCalls] = useState([]);
+    const [activeTab, setActiveTab] = useState("orders"); // "orders" | "reservations"
+    const [reservations, setReservations] = useState([]);
+    const [loadingRes, setLoadingRes] = useState(false);
+    const [resFilter, setResFilter] = useState("all");
 
     const addNotification = (text, type = 'info') => {
         setNotifications(prev => [{ id: Date.now(), text, type, time: new Date() }, ...prev].slice(0, 50));
@@ -31,11 +43,27 @@ function KitchenScreen() {
         try {
             const res = await API.get("/orders");
             setOrders(res.data.orders || res.data);
+            if (user.role !== 'kitchen') {
+                const s = await API.get("/admin/staff");
+                setKitchenList(s.data.filter(u => u.role === 'kitchen' || u.role === 'admin'));
+            }
         } catch (err) {
             console.error(err);
-            toast.error("Failed to fetch orders");
+            toast.error("Failed to fetch data");
         } finally {
             setLoading(false);
+        }
+    };
+
+    const fetchReservations = async () => {
+        setLoadingRes(true);
+        try {
+            const res = await API.get("/reservations/restaurant");
+            setReservations(res.data);
+        } catch (err) {
+            console.error("Failed to fetch reservations", err);
+        } finally {
+            setLoadingRes(false);
         }
     };
 
@@ -50,6 +78,7 @@ function KitchenScreen() {
 
     useEffect(() => {
         fetchOrders();
+        fetchReservations();
         fetchActiveStaff();
         // Fetch current restaurant open status
         const u = JSON.parse(localStorage.getItem("user") || "{}");
@@ -60,7 +89,7 @@ function KitchenScreen() {
         // Refresh staff every 30 seconds
         const staffInterval = setInterval(fetchActiveStaff, 30000);
 
-        const newSocket = io("http://localhost:5000");
+        const newSocket = io(`http://${window.location.hostname}:5000`);
         setSocket(newSocket);
         const user = JSON.parse(localStorage.getItem("user"));
 
@@ -111,6 +140,20 @@ function KitchenScreen() {
                     audio.play();
                 } catch (e) { }
             });
+
+            newSocket.on("newReservation", (res) => {
+                setReservations(prev => [res, ...prev]);
+                addNotification(`📅 New reservation — ${res.customerName}, ${res.partySize} guests at ${res.reservationTime}`, 'order');
+                toast.info(`New reservation from ${res.customerName}`);
+                try {
+                    const audio = new Audio("https://actions.google.com/sounds/v1/alarms/beep_short.ogg");
+                    audio.play();
+                } catch (e) { }
+            });
+
+            newSocket.on("reservationUpdated", (updated) => {
+                setReservations(prev => prev.map(r => r._id === updated._id ? { ...r, ...updated } : r));
+            });
         }
 
         return () => {
@@ -120,10 +163,14 @@ function KitchenScreen() {
     }, []);
 
     const updateStatus = async (id, status) => {
+        if (!selectedKitchen) {
+            toast.error("Please select a kitchen station first!");
+            return;
+        }
         try {
             await API.put(`/orders/${id}`, { status });
             toast.success(`Order marked as ${status}`);
-            setOrders(prev => prev.map(o => o._id === id ? { ...o, status } : o));
+            setOrders(prev => prev.map(o => o._id === id ? { ...o, status, kitchenId: selectedKitchen } : o));
         } catch (err) {
             toast.error(err.response?.data?.message || "Failed to update status");
         }
@@ -182,6 +229,16 @@ function KitchenScreen() {
         }
     };
 
+    const updateResStatus = async (id, status) => {
+        try {
+            await API.put(`/reservations/${id}/status`, { status });
+            setReservations(prev => prev.map(r => r._id === id ? { ...r, status } : r));
+            toast.success(`Reservation marked as ${status}`);
+        } catch (err) {
+            toast.error(err.response?.data?.message || "Failed to update reservation");
+        }
+    };
+
     const sendReply = (orderId) => {
         if (!replyText[orderId] || !socket) return;
         socket.emit("sendMessage", {
@@ -215,10 +272,29 @@ function KitchenScreen() {
         return <div className="min-h-screen flex items-center justify-center"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-brand-primary"></div></div>;
     }
 
-    const user = JSON.parse(localStorage.getItem("user") || "{}");
-
     return (
         <div className="p-6 max-w-7xl mx-auto min-h-screen">
+            {/* Top Navigation Bar */}
+            <div className="flex justify-between items-center mb-6 bg-white p-4 rounded-2xl shadow-sm border border-gray-100">
+                <button onClick={() => navigate(-1)} className="text-gray-500 hover:text-gray-900 font-bold flex items-center gap-2 text-sm transition-colors">
+                    <ChevronLeft className="w-4 h-4"/> Back
+                </button>
+                <div className="flex items-center gap-4">
+                    {user.role !== 'kitchen' && (
+                        <select value={selectedKitchen} onChange={e => setSelectedKitchen(e.target.value)} className="bg-gray-50 border border-gray-200 text-gray-900 text-sm rounded-lg focus:ring-brand-primary focus:border-brand-primary block w-48 p-2.5">
+                            <option value="">Select Kitchen Station</option>
+                            {kitchenList.map(s => <option key={s._id} value={s._id}>{s.name}</option>)}
+                        </select>
+                    )}
+                    <div onClick={() => navigate("/profile")} className="w-8 h-8 rounded-full bg-gradient-to-br from-orange-400 to-red-400 flex items-center justify-center text-white font-bold text-xs cursor-pointer hover:opacity-80 transition-opacity" title="Edit Profile">
+                        {(user?.name || "K")[0].toUpperCase()}
+                    </div>
+                    <button onClick={() => { localStorage.clear(); navigate("/login"); }} className="text-red-500 hover:text-red-700 font-bold flex items-center gap-2 text-sm transition-colors">
+                        <LogOut className="w-4 h-4"/> Sign Out
+                    </button>
+                </div>
+            </div>
+
             {/* Header */}
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
                 <div>
@@ -286,7 +362,146 @@ function KitchenScreen() {
                 </div>
             </div>
 
-            {/* Active Staff Panel */}
+            {/* Tab switcher: Orders | Reservations */}
+            <div className="flex gap-2 mb-6">
+                <button
+                    onClick={() => setActiveTab("orders")}
+                    className={`flex items-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all ${
+                        activeTab === "orders" ? "bg-brand-primary text-white shadow" : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                    }`}
+                >
+                    <ChefHat className="w-4 h-4" /> Orders
+                    <span className="bg-white/30 text-xs px-1.5 rounded-full">{orders.filter(o => ["pending","preparing","ready"].includes(o.status)).length}</span>
+                </button>
+                <button
+                    onClick={() => { setActiveTab("reservations"); fetchReservations(); }}
+                    className={`flex items-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all ${
+                        activeTab === "reservations" ? "bg-blue-600 text-white shadow" : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                    }`}
+                >
+                    <CalendarCheck className="w-4 h-4" /> Reservations
+                    <span className={`text-xs px-1.5 rounded-full ${
+                        activeTab === "reservations" ? "bg-white/30" : "bg-blue-100 text-blue-600"
+                    }`}>{reservations.filter(r => r.status === "pending").length}</span>
+                </button>
+            </div>
+
+            {/* Engaged Tables Bar */}
+            {activeTab === "orders" && (
+                <div className="mb-6 p-4 bg-orange-50 border border-orange-200 rounded-xl flex items-center gap-3 shadow-sm">
+                    <div className="w-10 h-10 rounded-xl bg-orange-500 flex items-center justify-center text-white shrink-0 shadow-inner">
+                        <Users className="w-5 h-5" />
+                    </div>
+                    <div>
+                        <h3 className="text-sm font-bold text-orange-900">Engaged Tables</h3>
+                        <p className="text-xs text-orange-700 mt-0.5 font-medium">
+                            {Array.from(new Set(orders.filter(o => ["pending", "preparing", "ready"].includes(o.status) && o.tableNumber && !o.tableNumber.toLowerCase().includes("home")).map(o => o.tableNumber))).length > 0 
+                                ? Array.from(new Set(orders.filter(o => ["pending", "preparing", "ready"].includes(o.status) && o.tableNumber && !o.tableNumber.toLowerCase().includes("home")).map(o => `Table ${o.tableNumber}`))).join(", ") 
+                                : "No tables currently engaged."}
+                        </p>
+                    </div>
+                </div>
+            )}
+
+            {/* ─────────── RESERVATIONS TAB ─────────── */}
+            {activeTab === "reservations" && (
+                <div>
+                    <div className="flex items-center justify-between mb-4">
+                        <div className="flex gap-2">
+                            {["all","pending","confirmed","seated","completed","cancelled"].map(s => (
+                                <button key={s} onClick={() => setResFilter(s)}
+                                    className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all capitalize ${resFilter === s ? "bg-blue-600 text-white" : "bg-gray-100 text-gray-600 hover:bg-gray-200"}`}>
+                                    {s}
+                                </button>
+                            ))}
+                        </div>
+                        <button onClick={fetchReservations} className="text-xs text-gray-500 hover:text-blue-600">↻ Refresh</button>
+                    </div>
+
+                    {loadingRes ? (
+                        <div className="text-center py-16 text-gray-400">Loading reservations...</div>
+                    ) : reservations.filter(r => resFilter === "all" || r.status === resFilter).length === 0 ? (
+                        <div className="text-center py-16 glass-panel">
+                            <CalendarCheck className="w-12 h-12 text-gray-300 mx-auto mb-3" />
+                            <p className="text-gray-500 font-medium">No reservations found</p>
+                        </div>
+                    ) : (
+                        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
+                            {reservations
+                                .filter(r => resFilter === "all" || r.status === resFilter)
+                                .map(res => {
+                                    const statusColors = {
+                                        pending: "bg-yellow-100 text-yellow-700 border-yellow-200",
+                                        confirmed: "bg-blue-100 text-blue-700 border-blue-200",
+                                        seated: "bg-purple-100 text-purple-700 border-purple-200",
+                                        completed: "bg-green-100 text-green-700 border-green-200",
+                                        cancelled: "bg-red-100 text-red-600 border-red-200",
+                                    };
+                                    return (
+                                        <motion.div key={res._id} layout initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
+                                            className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+                                            <div className="p-4 border-b border-gray-100 bg-gray-50 flex justify-between items-start">
+                                                <div>
+                                                    <h3 className="font-bold text-gray-900">{res.customerName}</h3>
+                                                    <p className="text-xs text-gray-500 mt-0.5">{new Date(res.reservationDate).toLocaleDateString("en-IN", { weekday:"short", day:"numeric", month:"short" })} · {res.reservationTime}</p>
+                                                </div>
+                                                <span className={`text-xs font-bold px-2.5 py-1 rounded-full border capitalize ${statusColors[res.status] || "bg-gray-100 text-gray-600"}`}>
+                                                    {res.status}
+                                                </span>
+                                            </div>
+                                            <div className="p-4 space-y-2 text-sm text-gray-700">
+                                                <div className="flex items-center gap-2">
+                                                    <Users className="w-4 h-4 text-gray-400" />
+                                                    <span>{res.partySize} guests</span>
+                                                    {res.occasion && res.occasion !== "none" && <span className="ml-2 text-xs bg-purple-50 text-purple-600 px-2 py-0.5 rounded-full capitalize">{res.occasion}</span>}
+                                                </div>
+                                                {res.tablePreference && res.tablePreference !== "any" && (
+                                                    <p className="text-xs text-gray-500">Pref: <span className="font-medium capitalize">{res.tablePreference}</span></p>
+                                                )}
+                                                {res.specialRequests && (
+                                                    <p className="text-xs text-gray-500 italic">"{res.specialRequests}"</p>
+                                                )}
+                                                <a href={`tel:${res.customerPhone}`} className="flex items-center gap-2 text-blue-600 hover:text-blue-700 font-medium text-xs mt-1">
+                                                    <Phone className="w-3.5 h-3.5" /> {res.customerPhone}
+                                                </a>
+                                            </div>
+                                            {res.status !== "completed" && res.status !== "cancelled" && (
+                                                <div className="px-4 pb-4 flex flex-wrap gap-2">
+                                                    {res.status === "pending" && (
+                                                        <button onClick={() => updateResStatus(res._id, "confirmed")}
+                                                            className="flex-1 bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold py-2 rounded-lg transition-all">
+                                                            ✓ Confirm
+                                                        </button>
+                                                    )}
+                                                    {res.status === "confirmed" && (
+                                                        <button onClick={() => updateResStatus(res._id, "seated")}
+                                                            className="flex-1 bg-purple-600 hover:bg-purple-500 text-white text-xs font-bold py-2 rounded-lg transition-all">
+                                                            🪑 Seat Guests
+                                                        </button>
+                                                    )}
+                                                    {res.status === "seated" && (
+                                                        <button onClick={() => updateResStatus(res._id, "completed")}
+                                                            className="flex-1 bg-green-600 hover:bg-green-500 text-white text-xs font-bold py-2 rounded-lg transition-all">
+                                                            ✓ Complete
+                                                        </button>
+                                                    )}
+                                                    <button onClick={() => updateResStatus(res._id, "cancelled")}
+                                                        className="px-3 py-2 bg-red-50 text-red-500 text-xs font-bold rounded-lg hover:bg-red-100 transition-all border border-red-100">
+                                                        Cancel
+                                                    </button>
+                                                </div>
+                                            )}
+                                        </motion.div>
+                                    );
+                                })}
+                        </div>
+                    )}
+                </div>
+            )}
+
+            {/* ─────────── ORDERS TAB ─────────── */}
+            {activeTab === "orders" && (
+            <>{/* Active Staff Panel */}
             <div className="glass-panel p-5 mb-8">
                 <div className="flex items-center justify-between mb-4">
                     <h2 className="text-lg font-bold text-gray-900 flex items-center gap-2">
@@ -489,7 +704,11 @@ function KitchenScreen() {
                 </motion.div>
             )}
 
+            </> /* end orders tab fragment */
+            )}
+
             {/* Notifications Drawer */}
+
             <AnimatePresence>
                 {showNotifications && (
                     <>

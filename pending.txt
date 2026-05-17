@@ -1,0 +1,1 @@
+scanned qr and call staff button send a message but that will not showing on staff screen also give a alert button to when cutomer press call staff it will show message box and a button that will give nearby free staff a alert that table number 1 is calling also add location acces to delivery boy staff we will use later 

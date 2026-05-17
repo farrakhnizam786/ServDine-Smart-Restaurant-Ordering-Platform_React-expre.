@@ -1,11 +1,13 @@
 import { useEffect, useState, useRef } from "react";
+import { useNavigate } from "react-router-dom";
 import API from "../api/axios";
 import { toast } from "react-toastify";
 import { io } from "socket.io-client";
-import { Clock, CheckCircle2, Package, MessageCircle, Send, X, Truck, BellRing, ShoppingBag } from "lucide-react";
+import { Clock, CheckCircle2, Package, MessageCircle, Send, X, Truck, BellRing, ShoppingBag, LogOut, ChevronLeft } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
 function DeliveryStaffScreen() {
+    const navigate = useNavigate();
     const [orders, setOrders] = useState([]);
     const [loading, setLoading] = useState(true);
     const [filter, setFilter] = useState("all");
@@ -16,6 +18,7 @@ function DeliveryStaffScreen() {
     });
     const user = JSON.parse(localStorage.getItem("user") || "{}");
     const isFreeRef = useRef(isAvailable);
+    const [location, setLocation] = useState(null);
 
     // Chat state
     const [activeChat, setActiveChat] = useState(null);
@@ -36,6 +39,21 @@ function DeliveryStaffScreen() {
         }
     }, [isAvailable]);
 
+    // Request continuous location access for delivery tracking
+    useEffect(() => {
+        if ("geolocation" in navigator) {
+            const watchId = navigator.geolocation.watchPosition(
+                (position) => {
+                    setLocation({ lat: position.coords.latitude, lng: position.coords.longitude });
+                    // Ready for future use: emit socket or API call here
+                },
+                (err) => console.warn("Location access denied or unavailable", err),
+                { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+            );
+            return () => navigator.geolocation.clearWatch(watchId);
+        }
+    }, []);
+
     const fetchOrders = async () => {
         try {
             const res = await API.get("/orders");
@@ -51,7 +69,7 @@ function DeliveryStaffScreen() {
     useEffect(() => {
         fetchOrders();
 
-        const newSocket = io("http://localhost:5000");
+        const newSocket = io(`http://${window.location.hostname}:5000`);
         setSocket(newSocket);
 
         if (user?.restaurantId) {
@@ -191,6 +209,21 @@ function DeliveryStaffScreen() {
 
     return (
         <div className="p-6 max-w-7xl mx-auto min-h-screen">
+            {/* Top Navigation Bar */}
+            <div className="flex justify-between items-center mb-6 bg-white p-4 rounded-2xl shadow-sm border border-gray-100">
+                <button onClick={() => navigate(-1)} className="text-gray-500 hover:text-gray-900 font-bold flex items-center gap-2 text-sm transition-colors">
+                    <ChevronLeft className="w-4 h-4"/> Back
+                </button>
+                <div className="flex items-center gap-4">
+                    <div onClick={() => navigate("/profile")} className="w-8 h-8 rounded-full bg-gradient-to-br from-orange-400 to-red-400 flex items-center justify-center text-white font-bold text-xs cursor-pointer hover:opacity-80 transition-opacity" title="Edit Profile">
+                        {(user?.name || "D")[0].toUpperCase()}
+                    </div>
+                    <button onClick={() => { localStorage.clear(); navigate("/login"); }} className="text-red-500 hover:text-red-700 font-bold flex items-center gap-2 text-sm transition-colors">
+                        <LogOut className="w-4 h-4"/> Sign Out
+                    </button>
+                </div>
+            </div>
+
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
                 <div>
                     <h1 className="text-3xl font-bold text-gray-900 tracking-tight flex items-center gap-3">

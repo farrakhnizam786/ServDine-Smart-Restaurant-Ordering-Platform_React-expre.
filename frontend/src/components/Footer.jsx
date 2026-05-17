@@ -1,5 +1,6 @@
 import { Store, Mail, Phone, MapPin } from "lucide-react";
 import { Link } from "react-router-dom";
+import logo from "../assets/logo.png";
 
 function Footer() {
     return (
@@ -10,11 +11,9 @@ function Footer() {
                     {/* Brand Info */}
                     <div className="col-span-1 md:col-span-1">
                         <Link to="/" className="flex items-center gap-3 mb-6">
-                            <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-brand-primary to-brand-gold flex items-center justify-center">
-                                <Store className="text-gray-900 w-5 h-5" />
-                            </div>
-                            <h1 className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-white to-gray-400">
-                                Dine<span className="text-brand-primary">Flow</span>
+                            <img src={logo} alt="ServDine" className="h-10 w-auto object-contain drop-shadow-md" />
+                            <h1 className="text-2xl font-bold text-gray-900">
+                                Serv<span className="text-brand-primary">Dine</span>
                             </h1>
                         </Link>
                         <p className="text-gray-500 text-sm leading-relaxed mb-6">
@@ -64,7 +63,7 @@ function Footer() {
                             </li>
                             <li className="flex items-center gap-3">
                                 <Mail className="w-5 h-5 text-brand-primary shrink-0" />
-                                <span className="text-gray-500 text-sm">support@dineflow.com</span>
+                                <span className="text-gray-500 text-sm">support@servdine.com</span>
                             </li>
                         </ul>
                     </div>
